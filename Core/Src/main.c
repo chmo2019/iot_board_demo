@@ -131,8 +131,8 @@ int main(void)
   HAL_Delay(2000); // set up time
 
   int direction = 0;
-
-  //uint32_t lastPressed = 0;
+  int stop = 0;
+  uint32_t lastPressed = 0;
 
   while (1)
   {
@@ -143,30 +143,44 @@ int main(void)
 
 	// TODO: stop PWM if button is not pressed for a while
 
-	if (htim15.Instance->CCR1 < 2460 && !HAL_GPIO_ReadPin(BUTTON_EXTI13_GPIO_Port, BUTTON_EXTI13_Pin) && !direction) {
+	if (HAL_GetTick() - lastPressed > 2000) {
+		stop = 1;
+		HAL_TIM_PWM_Stop(&htim15, TIM_CHANNEL_1);
+	}
+
+	if (!HAL_GPIO_ReadPin(BUTTON_EXTI13_GPIO_Port, BUTTON_EXTI13_Pin) && stop) {
+		stop = 0;
+		HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
+	}
+
+	// check for button pressed and rotate if so
+	if (htim15.Instance->CCR1 < 2460 && !HAL_GPIO_ReadPin(BUTTON_EXTI13_GPIO_Port, BUTTON_EXTI13_Pin) && !direction && !stop) {
 		htim15.Instance->CCR1++;
 
-		//lastPressed = HAL_GetTick();
+		lastPressed = HAL_GetTick(); // store last press time stamp
 
 		HAL_Delay(1);
 	}
 
-	if (htim15.Instance->CCR1 > 575 && !HAL_GPIO_ReadPin(BUTTON_EXTI13_GPIO_Port, BUTTON_EXTI13_Pin) && direction) { // && !HAL_GPIO_ReadPin(BUTTON_EXTI13_GPIO_Port, BUTTON_EXTI13_Pin)) {
+	// check for button pressed and rotate if so
+	else if (htim15.Instance->CCR1 > 575 && !HAL_GPIO_ReadPin(BUTTON_EXTI13_GPIO_Port, BUTTON_EXTI13_Pin) && direction && !stop) { // && !HAL_GPIO_ReadPin(BUTTON_EXTI13_GPIO_Port, BUTTON_EXTI13_Pin)) {
 		htim15.Instance->CCR1--;
 
+		lastPressed = HAL_GetTick(); // store last press time stamp
+
 		HAL_Delay(1);
 	}
 
+	// reverse direction on max angle
 	if (htim15.Instance->CCR1 == 2460) {
 			direction = 1;
 		}
 
+	// reverse direction in minimum angle
 	if (htim15.Instance->CCR1 == 575) {
 		direction = 0;
 	}
 
-
-	//HAL_Delay(1000);
   }
   /* USER CODE END 3 */
 }
