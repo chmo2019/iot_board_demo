@@ -1,0 +1,2 @@
+hci_tl_interface_template.c:54:6:hci_tl_lowlevel_init	4	static
+hci_tl_interface_template.c:77:6:hci_tl_lowlevel_isr	4	static
